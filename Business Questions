@@ -1,0 +1,66 @@
+ -- =============================================================================
+-- Question 1 : Which product has the highest price? Only return a single row.
+-- =============================================================================
+
+SELECT *
+FROM PRODUCTS
+ORDER BY PRICE DESC
+LIMIT 1;
+
+
+ -- =============================================================================
+-- Question 2 : Which customer has made the most orders?
+-- =============================================================================
+
+WITH order_count AS
+(SELECT 
+	o.customer_id, 
+	COUNT(o.order_id) AS total_order,
+	CONCAT(c.first_name, ' ' ,c.last_name) AS customer_fullname,
+	MAX(COUNT(o.order_id)) OVER () AS max_total_order
+FROM orders o
+LEFT JOIN customers c
+ON o.customer_id = c.customer_id
+GROUP BY o.customer_id, CONCAT(c.first_name, ' ' ,c.last_name)
+) 
+
+SELECT 
+	customer_id,
+	total_order, 
+	customer_fullname
+FROM order_count
+WHERE total_order = max_total_order;
+
+
+ -- =============================================================================
+-- Question 3 : What is the Total Revenue Per Product?
+-- =============================================================================
+
+SELECT P.PRODUCT_NAME,
+	SUM(P.PRICE * O.QUANTITY) AS REVENUE
+FROM PRODUCTS AS P
+JOIN ORDER_ITEMS AS O ON P.PRODUCT_ID = O.PRODUCT_ID
+GROUP BY P.PRODUCT_NAME
+ORDER BY REVENUE DESC;
+
+ -- =============================================================================
+-- Question 4 : Find the day with the highest revenue.
+-- =============================================================================
+
+SELECT O.ORDER_DATE,
+	SUM(I.QUANTITY * P.PRICE) AS REVENUE
+FROM ORDERS AS O
+JOIN ORDER_ITEMS AS I ON I.ORDER_ID = O.ORDER_ID
+JOIN PRODUCTS AS P ON P.PRODUCT_ID = I.PRODUCT_ID
+GROUP BY O.ORDER_DATE
+ORDER BY REVENUE DESC
+
+ -- ==================================================================================
+-- Question 5 : Find the first order (by date) for each customer.
+-- ====================================================================================
+
+SELECT DISTINCT(C.CUSTOMER_ID),
+	CONCAT(C.FIRST_NAME,' ',C.LAST_NAME) AS FULL_NAME,
+	MIN(O.ORDER_DATE) OVER(PARTITION BY C.CUSTOMER_ID)
+FROM CUSTOMERS AS C
+JOIN ORDERS AS O ON O.CUSTOMER_ID = C.CUSTOMER_ID
